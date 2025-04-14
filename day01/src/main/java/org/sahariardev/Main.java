@@ -21,12 +21,12 @@ public class Main {
                     try (InputStream inputStream = socket.getInputStream();
                          OutputStream outputStream = socket.getOutputStream()) {
 
-                        byte[] requestBytes = inputStream.readAllBytes();
-                        String request = new String(requestBytes, StandardCharsets.UTF_8);
-
-                        System.out.println("Received Request: \n\n"+request);
-
-                        outputStream.write(requestBytes);
+                        byte[] buffer = new byte[8 * 1024];
+                        int bytesRead;
+                        while ((bytesRead = inputStream.read(buffer)) != -1) {
+                            outputStream.write(buffer, 0, bytesRead);
+                            outputStream.flush();
+                        }
 
                     } catch (IOException e) {
                         throw new RuntimeException(e);
