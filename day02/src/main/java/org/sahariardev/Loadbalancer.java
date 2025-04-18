@@ -73,9 +73,6 @@ public class Loadbalancer {
 
         try (inputStream; outputStream) {
             while ((read = inputStream.read(buffer)) != -1) {
-                if (read == 0) {
-                    break;
-                }
                 System.out.println("--------" + type + "-------");
                 System.out.println(new String(buffer, StandardCharsets.UTF_8));
                 outputStream.write(buffer, 0, read);
