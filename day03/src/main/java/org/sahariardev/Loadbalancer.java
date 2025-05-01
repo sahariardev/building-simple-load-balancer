@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.net.SocketException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -44,7 +42,12 @@ public class Loadbalancer {
 
                 Future<?> upStreamFuture = executor.submit(() -> {
                     try {
-                        copyStream(clientInputStream, targetOutputStream, "request");
+                        
+                        HttpRequest httpRequest = HttpHandler.parsetHttpRequest(clientInputStream);
+                        System.out.println("--------request-------");
+                        System.out.println(new String(httpRequest.toByteArray(), "UTF-8"));
+                        writeRequest(targetOutputStream, httpRequest);
+
                     } catch (IOException e) {
                         System.out.println("error copying stream");
                     }
@@ -52,7 +55,10 @@ public class Loadbalancer {
 
                 Future<?> downStreamFuture = executor.submit(() -> {
                     try {
-                        copyStream(targetInputStream, clientOutputStream, "response");
+                        HttpResponse httpResponse = HttpHandler.parseHttpResponse(targetInputStream);
+                        System.out.println("--------response-------");
+                        System.out.println(new String(httpResponse.toByteArray(), "UTF-8"));
+                        writeResponse(clientOutputStream, httpResponse);
                     } catch (IOException e) {
                         System.out.println("error copying stream");
                     }
@@ -67,20 +73,14 @@ public class Loadbalancer {
         });
     }
 
-    private void copyStream(InputStream inputStream, OutputStream outputStream, String type) throws IOException {
-        byte[] buffer = new byte[1024];
-        int read;
+    private void writeRequest(OutputStream outputStream, HttpRequest httpRequest) throws IOException {
+        outputStream.write(httpRequest.toByteArray());
+        outputStream.flush();
+    }
 
-        try (inputStream; outputStream) {
-            while ((read = inputStream.read(buffer)) != -1) {
-                System.out.println("--------" + type + "-------");
-                System.out.println(new String(buffer, StandardCharsets.UTF_8));
-                outputStream.write(buffer, 0, read);
-                outputStream.flush();
-            }
-        } catch (SocketException e) {
-
-        }
+    public void writeResponse(OutputStream outputStream, HttpResponse httpResponse) throws IOException {
+        outputStream.write(httpResponse.toByteArray());
+        outputStream.flush();
     }
 
 }
